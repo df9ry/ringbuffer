@@ -86,6 +86,9 @@ int main(int argc, char *argv[]) {
 	assert(memcmp(&test[30], buf, 50) == 0);
 	assert(rb_get_used(&rb) == 70);
 	assert(rb_get_free(&rb) == 180);
+	assert(rb_read_syn_ch(&rb, buf, 100) == 70);
+	assert(memcmp(&test[30], buf, 70) == 0);
+	assert(rb_write_syn_ch(&rb, test, 90) == 90);
 	printf("OK\n");
 
 	printf("Testing rb_clear\n");

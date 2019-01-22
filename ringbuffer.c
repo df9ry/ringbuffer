@@ -89,6 +89,8 @@ static inline size_t _get(struct _ringbuffer *_rb, uint8_t *po, size_t co)
 
 	if (co > _rb->used)
 		co = _rb->used;
+	if (!co)
+		return 0;
 	new_tail = (_rb->tail + co) % _rb->size;
 	if (new_tail > _rb->tail) {
 		memcpy(po, &_rb->data[_rb->tail], co);
@@ -237,28 +239,32 @@ int rb_write_asy(ringbuffer_t *rb, uint8_t *po, size_t co)
 int rb_read_syn(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
-	int res, _co = co;
-	uint8_t *_po = po;
+	int res, got = 0;
 
 	assert(rb);
 	_rb = rb->_rb;
 	if (!rb->_rb)
 		return -EFAULT;
 	pthread_mutex_lock(&_rb->rd_mutex);
-	while (_co > 0) {
+	while (co > 0) {
 		pthread_spin_lock(&_rb->spinlock); /*----v*/
-		res = _get(_rb, _po, _co);
+		res = _get(_rb, po, co);
 		pthread_spin_unlock(&_rb->spinlock); /*--^*/
 		if (res == 0) {
-			_cond_wait(&_rb->wr_cond, &_rb->wr_cond_lock);
+			if (got == 0) {
+				_cond_wait(&_rb->wr_cond, &_rb->wr_cond_lock);
+			} else {
+				break;
+			}
 		} else {
-			_po += res;
-			_co -= res;
-			_cond_signal(&_rb->rd_cond, &_rb->rd_cond_lock);
-		}
+			po += res;
+			co -= res;
+			got += res;
+		} /* end while */
 	} /* end while */
 	pthread_mutex_unlock(&_rb->rd_mutex);
-	return co;
+	_cond_signal(&_rb->rd_cond, &_rb->rd_cond_lock);
+	return got;
 }
 
 int rb_read_asy(ringbuffer_t *rb, uint8_t *po, size_t co)
