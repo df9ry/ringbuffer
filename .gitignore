@@ -1,7 +1,7 @@
 # Project specific
 _Debug/
 _Release/
-_documentation/
+_Documentation/
 .settings/
 
 # Prerequisites
@@ -56,3 +56,4 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+/Debug/
