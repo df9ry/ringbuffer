@@ -32,13 +32,11 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) -shared $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
 	
-$(_TARGET)_test: $(_TARGET)_test.o
-	$(CC) $(CFLAGS) \
-		-o $(_TARGET)_test \
-		$(_TARGET)_test.o 
-	
 %.o: %.c $(SRCDIR)
-	$(CC) -shared $(CFLAGS) -c $<	
+	$(CC) -shared $(CFLAGS) -c $<
+	
+clean:
+	rm -rf $(SRCDIR)/$(OBJDIR) $(SRCDIR)/$(DOCDIR)	
 	
 doc:
 	doxygen $(SRCDIR)/doxygen.conf
@@ -46,12 +44,10 @@ doc:
 	cp $(SRCDIR)/$(DOCDIR)/latex/refman.pdf \
 		$(SRCDIR)/$(DOCDIR)/$(_TARGET).pdf
 
-test: $(TARGET) $(_TARGET)_test
-	$(CC) $(CFLAGS) \
-		-o $(_TARGET)_test \
-		-L$(SRCDIR)/_Debug \
-		-l$(_TARGET) \
-		$(SRCDIR)/$(_TARGET)_test.c
+test: $(TARGET) $(_TARGET)_test.c
+	$(CC) $(CFLAGS) -o $(_TARGET)_test \
+	-L$(SRCDIR)/_Debug -l$(_TARGET) \
+	$(SRCDIR)/$(_TARGET)_test.c
 	sh -c "LD_LIBRARY_PATH=./ ./$(_TARGET)_test"
 
 install:

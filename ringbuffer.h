@@ -38,12 +38,17 @@ struct ringbuffer {
 };
 
 /**
+ * @brief Typedef for struct ringbuffer.
+ */
+typedef struct ringbuffer ringbuffer_t;
+
+/**
  * @brief Initialize a ring buffer.
  * @param rb Ring buffer structure.
  * @param size Size of the ring buffer.
  * @return 0 on success. Error code otherwise.
  */
-extern int rb_init(struct ringbuffer *rb, size_t size);
+extern int rb_init(ringbuffer_t *rb, size_t size);
 
 /**
  * @brief Destroy a ring buffer, release all ressources occupied by the ring
@@ -51,7 +56,7 @@ extern int rb_init(struct ringbuffer *rb, size_t size);
  * @param rb Ring buffer to destroy.
  * @return 0 on success. Error code otherwise.
  */
-extern int rb_destroy(struct ringbuffer *rb);
+extern int rb_destroy(ringbuffer_t *rb);
 
 /**
  * @brief Write synchronous to the ring buffer.
@@ -60,7 +65,19 @@ extern int rb_destroy(struct ringbuffer *rb);
  * @param co Size of the data to write.
  * @return Number of bytes actually written or a negative error code.
  */
-extern int rb_write_syn(struct ringbuffer *rb, uint8_t *po, size_t co);
+extern int rb_write_syn(ringbuffer_t *rb, uint8_t *po, size_t co);
+
+/**
+ * @brief Write synchronous to the ring buffer.
+ * @param rb The ring buffer to write to.
+ * @param po Pointer to data to write.
+ * @param co Size of the data to write.
+ * @return Number of bytes actually written or a negative error code.
+ */
+static inline int rb_write_syn_ch(ringbuffer_t *rb, char *pb, size_t cb)
+{
+	return rb_write_syn(rb, (uint8_t*)pb, cb);
+}
 
 /**
  * @brief Write asynchronous to the ring buffer.
@@ -69,7 +86,19 @@ extern int rb_write_syn(struct ringbuffer *rb, uint8_t *po, size_t co);
  * @param co Size of the data to write.
  * @return Number of bytes actually written or a negative error code.
  */
-extern int rb_write_asy(struct ringbuffer *rb, uint8_t *po, size_t co);
+extern int rb_write_asy(ringbuffer_t *rb, uint8_t *po, size_t co);
+
+/**
+ * @brief Write asynchronous to the ring buffer.
+ * @param rb The ring buffer to write to.
+ * @param po Pointer to data to write.
+ * @param co Size of the data to write.
+ * @return Number of bytes actually written or a negative error code.
+ */
+static inline int rb_write_asy_ch(ringbuffer_t *rb, char *pb, size_t cb)
+{
+	return rb_write_asy(rb, (uint8_t*)pb, cb);
+}
 
 /**
  * @brief Read synchronous from the ring buffer.
@@ -78,7 +107,7 @@ extern int rb_write_asy(struct ringbuffer *rb, uint8_t *po, size_t co);
  * @param co Number of octets requested to read.
  * @return Number of bytes actually read or a negative error code.
  */
-extern int rb_read_syn(struct ringbuffer *rb, uint8_t *po, size_t co);
+extern int rb_read_syn(ringbuffer_t *rb, uint8_t *po, size_t co);
 
 /**
  * @brief Read synchronous from the ring buffer.
@@ -87,20 +116,58 @@ extern int rb_read_syn(struct ringbuffer *rb, uint8_t *po, size_t co);
  * @param co Number of octets requested to read.
  * @return Number of bytes actually read or a negative error code.
  */
-extern int rb_read_asy(struct ringbuffer *rb, uint8_t *po, size_t co);
+static inline int rb_read_syn_ch(ringbuffer_t *rb, char *pb, size_t cb)
+{
+	return rb_read_syn(rb, (uint8_t*)pb, cb);
+}
+
+/**
+ * @brief Read synchronous from the ring buffer.
+ * @param rb The ring buffer to read from.
+ * @param po Pointer to buffer to read into.
+ * @param co Number of octets requested to read.
+ * @return Number of bytes actually read or a negative error code.
+ */
+extern int rb_read_asy(ringbuffer_t *rb, uint8_t *po, size_t co);
+
+/**
+ * @brief Read synchronous from the ring buffer.
+ * @param rb The ring buffer to read from.
+ * @param po Pointer to buffer to read into.
+ * @param co Number of octets requested to read.
+ * @return Number of bytes actually read or a negative error code.
+ */
+static inline int rb_read_asy_ch(ringbuffer_t *rb, char *pb, size_t cb)
+{
+	return rb_read_asy(rb, (uint8_t*)pb, cb);
+}
 
 /**
  * @brief Clear the ring buffer.
  * @param rb The ring buffer to read from.
  */
-extern void rb_clear(struct ringbuffer *rb);
+extern void rb_clear(ringbuffer_t *rb);
 
 /**
  * @brief Get size of the ring buffer.
  * @param rb The ring buffer to investigate.
  * @return size of the ring buffer.
  */
-extern size_t rg_get_size(struct ringbuffer *rb);
+extern size_t rb_get_size(ringbuffer_t *rb);
+
+/**
+ * @brief Get used space of the ring buffer.
+ * @param rb The ring buffer to investigate.
+ * @return Used space of the ring buffer.
+ */
+extern size_t rb_get_used(ringbuffer_t *rb);
+
+/**
+ * @brief Get free space of the ring buffer.
+ * @param rb The ring buffer to investigate.
+ * @return Free space of the ring buffer.
+ */
+extern size_t rb_get_free(ringbuffer_t *rb);
 
 /**
  * @brief Get the number of octets lost for writes without having enough room
@@ -108,14 +175,14 @@ extern size_t rg_get_size(struct ringbuffer *rb);
  * @param rb The ring buffer to query.
  * @return Total number of octets lost up to now.
  */
-extern size_t rb_get_lost(struct ringbuffer *rb);
+extern size_t rb_get_lost(ringbuffer_t *rb);
 
 /**
  * @brief Get the number of octets lost for writes without having enough room
  *        in the ring buffer and clear lost counter.
  * @return Total number of octets lost up to now.
  */
-extern size_t rb_clear_lost(struct ringbuffer *rb);
+extern size_t rb_clear_lost(ringbuffer_t *rb);
 
 /**
  * @brief Signal loosing of octets for the ring buffer and return the number
@@ -123,7 +190,7 @@ extern size_t rb_clear_lost(struct ringbuffer *rb);
  * @param loose Number of octets lost.
  * @return Total number of octets lost up to now.
  */
-extern size_t rb_loose_data(struct ringbuffer *rb, size_t loose);
+extern size_t rb_loose(ringbuffer_t *rb, size_t loose);
 
 #ifdef __cplusplus
 }
