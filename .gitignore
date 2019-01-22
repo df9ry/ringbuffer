@@ -3,6 +3,8 @@ _Debug/
 _Release/
 _Documentation/
 .settings/
+.cproject
+*~
 
 # Prerequisites
 *.d
