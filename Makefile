@@ -51,7 +51,7 @@ test: $(TARGET) $(_TARGET)_test.c
 	sh -c "LD_LIBRARY_PATH=./ ./$(_TARGET)_test"
 
 install:
-ifeq ($(OS),Cygwin)
+ifneq ($(OS),Linux)
 	cp $(TARGET) /usr/local/lib
 else
 	cp $(TARGET) /usr/local/lib/$(TARGET).0.1.0
