@@ -27,16 +27,13 @@ _TARGET  =  ringbuffer
 TARGET   =  lib$(_TARGET).$(SOEXT)
 
 all: $(TARGET)
-	echo "Build OK"
+	@echo "*** Build ringbuffer OK ***"
 
 $(TARGET): $(OBJS)
 	$(CC) -shared $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
 	
 %.o: %.c $(SRCDIR)
 	$(CC) -shared $(CFLAGS) -c $<
-	
-clean:
-	rm -rf $(SRCDIR)/$(OBJDIR) $(SRCDIR)/$(DOCDIR)	
 	
 doc:
 	doxygen $(SRCDIR)/doxygen.conf
@@ -52,7 +49,7 @@ test: $(TARGET) $(_TARGET)_test.c
 
 install: all
 ifneq ($(OS),GNU/Linux)
-	cp $(TARGET) /usr/local/lib
+	cp $(TARGET) /usr/local/lib/
 else
 	cp $(TARGET) /usr/local/lib/$(TARGET).0.1.0
 	chmod 0755   /usr/local/lib/$(TARGET).0.1.0	
@@ -60,6 +57,6 @@ else
 	( cd /usr/local/lib && ln -sf $(TARGET).0.1.0 $(TARGET).0   )
 	( cd /usr/local/lib && ln -sf $(TARGET).0.1.0 $(TARGET)     )
 endif
-	cp -rf ../$(_TARGET).h /usr/local/include
+	cp -rf ../$(_TARGET).h /usr/local/include/
 
 endif

@@ -1,3 +1,4 @@
+
 #   Project ringbuffer
 #   Copyright (C) 2019  tania@df9ry.de
 #
@@ -55,3 +56,7 @@ Makefile : ;
 %.mk :: ;
 
 % :: $(OBJDIR) ;
+
+PHONY: clean
+clean:
+	rm -rf $(OBJDIR) $(DOCDIR)
