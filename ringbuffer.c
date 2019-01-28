@@ -179,7 +179,7 @@ int rb_destroy(ringbuffer_t *rb)
 	return 0;
 }
 
-int rb_write_syn(ringbuffer_t *rb, uint8_t *po, size_t co)
+int rb_write_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
 	int res = 0, written = 0;
@@ -207,7 +207,7 @@ int rb_write_syn(ringbuffer_t *rb, uint8_t *po, size_t co)
 	return written;
 }
 
-int rb_write_asy(ringbuffer_t *rb, uint8_t *po, size_t co)
+int rb_write_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
 	int res;
@@ -236,7 +236,7 @@ int rb_write_asy(ringbuffer_t *rb, uint8_t *po, size_t co)
 	return res;
 }
 
-int rb_read_syn(ringbuffer_t *rb, uint8_t *po, size_t co)
+int rb_read_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
 	int res, got = 0;
@@ -267,7 +267,7 @@ int rb_read_syn(ringbuffer_t *rb, uint8_t *po, size_t co)
 	return got;
 }
 
-int rb_read_asy(ringbuffer_t *rb, uint8_t *po, size_t co)
+int rb_read_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
 	int res;

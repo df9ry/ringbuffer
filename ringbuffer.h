@@ -59,87 +59,87 @@ extern int rb_init(ringbuffer_t *rb, size_t size);
 extern int rb_destroy(ringbuffer_t *rb);
 
 /**
- * @brief Write synchronous to the ring buffer.
+ * @brief Write to the ring buffer blocking.
  * @param rb The ring buffer to write to.
  * @param po Pointer to data to write.
  * @param co Size of the data to write.
  * @return Number of bytes actually written or a negative error code.
  */
-extern int rb_write_syn(ringbuffer_t *rb, uint8_t *po, size_t co);
+extern int rb_write_block(ringbuffer_t *rb, uint8_t *po, size_t co);
 
 /**
- * @brief Write synchronous to the ring buffer.
+ * @brief Write to the ring buffer blocking.
  * @param rb The ring buffer to write to.
  * @param po Pointer to data to write.
  * @param co Size of the data to write.
  * @return Number of bytes actually written or a negative error code.
  */
-static inline int rb_write_syn_ch(ringbuffer_t *rb, char *pb, size_t cb)
+static inline int rb_write_block_ch(ringbuffer_t *rb, char *pb, size_t cb)
 {
-	return rb_write_syn(rb, (uint8_t*)pb, cb);
+	return rb_write_block(rb, (uint8_t*)pb, cb);
 }
 
 /**
- * @brief Write asynchronous to the ring buffer.
+ * @brief Write to the ring buffer nonblocking.
  * @param rb The ring buffer to write to.
  * @param po Pointer to data to write.
  * @param co Size of the data to write.
  * @return Number of bytes actually written or a negative error code.
  */
-extern int rb_write_asy(ringbuffer_t *rb, uint8_t *po, size_t co);
+extern int rb_write_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co);
 
 /**
- * @brief Write asynchronous to the ring buffer.
+ * @brief Write to the ring buffer nonblocking.
  * @param rb The ring buffer to write to.
  * @param po Pointer to data to write.
  * @param co Size of the data to write.
  * @return Number of bytes actually written or a negative error code.
  */
-static inline int rb_write_asy_ch(ringbuffer_t *rb, char *pb, size_t cb)
+static inline int rb_write_nonblock_ch(ringbuffer_t *rb, char *pb, size_t cb)
 {
-	return rb_write_asy(rb, (uint8_t*)pb, cb);
+	return rb_write_nonblock(rb, (uint8_t*)pb, cb);
 }
 
 /**
- * @brief Read synchronous from the ring buffer.
+ * @brief Read from the ring buffer blocking.
  * @param rb The ring buffer to read from.
  * @param po Pointer to buffer to read into.
  * @param co Number of octets requested to read.
  * @return Number of bytes actually read or a negative error code.
  */
-extern int rb_read_syn(ringbuffer_t *rb, uint8_t *po, size_t co);
+extern int rb_read_block(ringbuffer_t *rb, uint8_t *po, size_t co);
 
 /**
- * @brief Read synchronous from the ring buffer.
+ * @brief Read from the ring buffer blocking.
  * @param rb The ring buffer to read from.
  * @param po Pointer to buffer to read into.
  * @param co Number of octets requested to read.
  * @return Number of bytes actually read or a negative error code.
  */
-static inline int rb_read_syn_ch(ringbuffer_t *rb, char *pb, size_t cb)
+static inline int rb_read_block_ch(ringbuffer_t *rb, char *pb, size_t cb)
 {
-	return rb_read_syn(rb, (uint8_t*)pb, cb);
+	return rb_read_block(rb, (uint8_t*)pb, cb);
 }
 
 /**
- * @brief Read synchronous from the ring buffer.
+ * @brief Read from the ring buffer nonblocking.
  * @param rb The ring buffer to read from.
  * @param po Pointer to buffer to read into.
  * @param co Number of octets requested to read.
  * @return Number of bytes actually read or a negative error code.
  */
-extern int rb_read_asy(ringbuffer_t *rb, uint8_t *po, size_t co);
+extern int rb_read_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co);
 
 /**
- * @brief Read synchronous from the ring buffer.
+ * @brief Read from the ring buffer nonblocking.
  * @param rb The ring buffer to read from.
  * @param po Pointer to buffer to read into.
  * @param co Number of octets requested to read.
  * @return Number of bytes actually read or a negative error code.
  */
-static inline int rb_read_asy_ch(ringbuffer_t *rb, char *pb, size_t cb)
+static inline int rb_read_nonblock_ch(ringbuffer_t *rb, char *pb, size_t cb)
 {
-	return rb_read_asy(rb, (uint8_t*)pb, cb);
+	return rb_read_nonblock(rb, (uint8_t*)pb, cb);
 }
 
 /**
