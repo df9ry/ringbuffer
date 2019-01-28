@@ -1,0 +1,4 @@
+[submodule "ringbuffer"]
+	path = ringbuffer
+	url = https://github.com/df9ry/ringbuffer
+	branch = master
