@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "ringbuffer.h"
+#include "ringbuffer/ringbuffer.h"
 
 static char test[100] = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklom"
 						"1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklom";

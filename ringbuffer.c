@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ringbuffer.h"
+#include "ringbuffer/ringbuffer.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,16 +40,26 @@ struct _ringbuffer {
 
 static inline void _cond_wait(pthread_cond_t *cond, pthread_mutex_t *lock)
 {
-	pthread_mutex_lock(lock);
-	pthread_cond_wait(cond, lock);
-	pthread_mutex_unlock(lock);
+	int erc;
+
+	erc = pthread_mutex_lock(lock);
+	assert(erc == 0);
+	erc = pthread_cond_wait(cond, lock);
+	assert(erc == 0);
+	erc = pthread_mutex_unlock(lock);
+	assert(erc == 0);
 }
 
 static inline void _cond_signal(pthread_cond_t *cond, pthread_mutex_t *lock)
 {
-	pthread_mutex_lock(lock);
-	pthread_cond_signal(cond);
-	pthread_mutex_unlock(lock);
+	int erc;
+
+	erc = pthread_mutex_lock(lock);
+	assert(erc == 0);
+	erc = pthread_cond_signal(cond);
+	assert(erc == 0);
+	erc = pthread_mutex_unlock(lock);
+	assert(erc == 0);
 }
 
 static inline size_t _free(struct _ringbuffer *_rb)
@@ -106,75 +116,66 @@ static inline size_t _get(struct _ringbuffer *_rb, uint8_t *po, size_t co)
 
 int rb_init(ringbuffer_t *rb, size_t size)
 {
-	struct _ringbuffer *_rb;
 	int                 erc;
 
 	assert(rb);
-	if (rb->_rb)
-		return EFAULT;
-	rb->_rb = _rb = malloc(sizeof(struct _ringbuffer) + size);
-	if (!_rb)
+	rb->_rb = malloc(sizeof(struct _ringbuffer) + size);
+	if (!rb->_rb)
 		return ENOMEM;
-	erc = pthread_spin_init(&_rb->spinlock, PTHREAD_PROCESS_PRIVATE);
+	erc = pthread_spin_init(&rb->_rb->spinlock, PTHREAD_PROCESS_PRIVATE);
 	if (erc)
 		goto undo_spinlock;
-	erc = pthread_mutex_init(&_rb->rd_mutex, NULL);
+	erc = pthread_mutex_init(&rb->_rb->rd_mutex, NULL);
 	if (erc)
 		goto undo_rd_mutex;
-	erc = pthread_mutex_init(&_rb->rd_cond_lock, NULL);
+	erc = pthread_mutex_init(&rb->_rb->rd_cond_lock, NULL);
 	if (erc)
 		goto undo_rd_cond_lock;
-	erc = pthread_cond_init(&_rb->rd_cond, NULL);
+	erc = pthread_cond_init(&rb->_rb->rd_cond, NULL);
 	if (erc)
 		goto undo_rd_cond;
-	erc = pthread_mutex_init(&_rb->wr_mutex, NULL);
+	erc = pthread_mutex_init(&rb->_rb->wr_mutex, NULL);
 	if (erc)
 		goto undo_wr_mutex;
-	erc = pthread_mutex_init(&_rb->wr_cond_lock, NULL);
+	erc = pthread_mutex_init(&rb->_rb->wr_cond_lock, NULL);
 	if (erc)
 		goto undo_wr_cond_lock;
-	erc = pthread_cond_init(&_rb->wr_cond, NULL);
+	erc = pthread_cond_init(&rb->_rb->wr_cond, NULL);
 	if (erc)
 		goto undo_wr_cond;
-	_rb->size = _rb->tail = _rb->lost = 0;
-	_rb->size = size;
-
+	rb->_rb->used = rb->_rb->tail = rb->_rb->lost = 0;
+	rb->_rb->size = size;
 	return 0;
 
 undo_wr_cond:
-	pthread_mutex_destroy(&_rb->wr_cond_lock);
+	pthread_mutex_destroy(&rb->_rb->wr_cond_lock);
 undo_wr_cond_lock:
-	pthread_mutex_destroy(&_rb->wr_mutex);
+	pthread_mutex_destroy(&rb->_rb->wr_mutex);
 undo_wr_mutex:
-	pthread_cond_destroy(&_rb->rd_cond);
+	pthread_cond_destroy(&rb->_rb->rd_cond);
 undo_rd_cond:
-	pthread_mutex_destroy(&_rb->rd_cond_lock);
+	pthread_mutex_destroy(&rb->_rb->rd_cond_lock);
 undo_rd_cond_lock:
-	pthread_mutex_destroy(&_rb->rd_mutex);
+	pthread_mutex_destroy(&rb->_rb->rd_mutex);
 undo_rd_mutex:
-	pthread_spin_destroy(&_rb->spinlock);
+	pthread_spin_destroy(&rb->_rb->spinlock);
 undo_spinlock:
-	free(_rb);
-	rb->_rb = NULL;
 	return erc;
 }
 
 int rb_destroy(ringbuffer_t *rb)
 {
-	struct _ringbuffer *_rb;
-
 	assert(rb);
-	_rb = rb->_rb;
 	if (!rb->_rb)
 		return EFAULT;
-	pthread_cond_destroy(&_rb->wr_cond);
-	pthread_mutex_destroy(&_rb->wr_cond_lock);
-	pthread_mutex_destroy(&_rb->wr_mutex);
-	pthread_cond_destroy(&_rb->rd_cond);
-	pthread_mutex_destroy(&_rb->rd_cond_lock);
-	pthread_mutex_destroy(&_rb->rd_mutex);
-	pthread_spin_destroy(&_rb->spinlock);
-	free(_rb);
+	pthread_cond_destroy(&rb->_rb->wr_cond);
+	pthread_mutex_destroy(&rb->_rb->wr_cond_lock);
+	pthread_mutex_destroy(&rb->_rb->wr_mutex);
+	pthread_cond_destroy(&rb->_rb->rd_cond);
+	pthread_mutex_destroy(&rb->_rb->rd_cond_lock);
+	pthread_mutex_destroy(&rb->_rb->rd_mutex);
+	pthread_spin_destroy(&rb->_rb->spinlock);
+	free(rb->_rb);
 	rb->_rb = NULL;
 	return 0;
 }
@@ -182,7 +183,7 @@ int rb_destroy(ringbuffer_t *rb)
 int rb_write_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
-	int res = 0, written = 0;
+	int erc, res = 0, written = 0;
 
 	assert(rb);
 	_rb = rb->_rb;
@@ -190,11 +191,14 @@ int rb_write_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 		return -EFAULT;
 	if (co == 0)
 		return 0;
-	pthread_mutex_lock(&_rb->wr_mutex);
+	erc = pthread_mutex_lock(&_rb->wr_mutex);
+	assert(erc == 0);
 	while (co > 0) {
-		pthread_spin_lock(&_rb->spinlock); /*----v*/
+		erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+		assert(erc == 0);
 		res = _put(_rb, po, co);
-		pthread_spin_unlock(&_rb->spinlock); /*--^*/
+		erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+		assert(erc == 0);
 		po += res;
 		co -= res;
 		written += res;
@@ -203,14 +207,15 @@ int rb_write_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 		if (co > 0)
 			_cond_wait(&_rb->rd_cond, &_rb->rd_cond_lock);
 	} /* end while */
-	pthread_mutex_unlock(&_rb->wr_mutex);
+	erc = pthread_mutex_unlock(&_rb->wr_mutex);
+	assert(erc == 0);
 	return written;
 }
 
 int rb_write_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
-	int res;
+	int erc, res;
 	size_t written = 0;
 
 	assert(rb);
@@ -219,7 +224,8 @@ int rb_write_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 		return -EFAULT;
 	if (co > _rb->size)
 		return -E2BIG;
-	pthread_spin_lock(&_rb->spinlock); /*----v*/
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	if (co <= _free(_rb)) {
 		while (co > 0) {
 			res = _put(_rb, po, co);
@@ -232,24 +238,28 @@ int rb_write_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 	} else {
 		res = -ENOMEM;
 	}
-	pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0);
 	return res;
 }
 
 int rb_read_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
-	int res, got = 0;
+	int erc, res, got = 0;
 
 	assert(rb);
 	_rb = rb->_rb;
 	if (!rb->_rb)
 		return -EFAULT;
-	pthread_mutex_lock(&_rb->rd_mutex);
+	erc = pthread_mutex_lock(&_rb->rd_mutex);
+	assert(erc == 0);
 	while (co > 0) {
-		pthread_spin_lock(&_rb->spinlock); /*----v*/
+		erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+		assert(erc == 0);
 		res = _get(_rb, po, co);
-		pthread_spin_unlock(&_rb->spinlock); /*--^*/
+		erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+		assert(erc == 0);
 		if (res == 0) {
 			if (got == 0) {
 				_cond_wait(&_rb->wr_cond, &_rb->wr_cond_lock);
@@ -262,7 +272,8 @@ int rb_read_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 			got += res;
 		} /* end while */
 	} /* end while */
-	pthread_mutex_unlock(&_rb->rd_mutex);
+	erc = pthread_mutex_unlock(&_rb->rd_mutex);
+	assert(erc == 0);
 	_cond_signal(&_rb->rd_cond, &_rb->rd_cond_lock);
 	return got;
 }
@@ -270,7 +281,7 @@ int rb_read_block(ringbuffer_t *rb, uint8_t *po, size_t co)
 int rb_read_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 {
 	struct _ringbuffer *_rb;
-	int res;
+	int erc, res;
 	size_t got = 0;
 
 	assert(rb);
@@ -279,7 +290,8 @@ int rb_read_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 		return -EFAULT;
 	if (co > _rb->size)
 		return -E2BIG;
-	pthread_spin_lock(&_rb->spinlock); /*----v*/
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	if (co <= _used(_rb)) {
 		while (co > 0) {
 			res = _get(_rb, po, co);
@@ -292,20 +304,24 @@ int rb_read_nonblock(ringbuffer_t *rb, uint8_t *po, size_t co)
 	} else {
 		res = -EAGAIN;
 	}
-	pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0);
 	return res;
 }
 
 void rb_clear(ringbuffer_t *rb)
 {
 	struct _ringbuffer *_rb;
+	int erc;
 
 	assert(rb);
 	_rb = rb->_rb;
 	assert(_rb);
-	assert(pthread_spin_lock(&_rb->spinlock) == 0); /*----v*/
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	_rb->used = _rb->tail = _rb->lost = 0;
-	assert(pthread_spin_unlock(&_rb->spinlock) == 0); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0);
 }
 
 size_t rb_get_size(ringbuffer_t *rb)
@@ -322,13 +338,16 @@ size_t rb_get_used(ringbuffer_t *rb)
 {
 	struct _ringbuffer *_rb;
 	size_t res;
+	int erc;
 
 	assert(rb);
 	_rb = rb->_rb;
 	assert(_rb);
-	assert(pthread_spin_lock(&_rb->spinlock) == 0); /*----v*/
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	res = _used(_rb);
-	assert(pthread_spin_unlock(&_rb->spinlock) == 0); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0);
 	return res;
 }
 
@@ -336,13 +355,16 @@ size_t rb_get_free(ringbuffer_t *rb)
 {
 	struct _ringbuffer *_rb;
 	size_t res;
+	int erc;
 
 	assert(rb);
 	_rb = rb->_rb;
 	assert(_rb);
-	assert(pthread_spin_lock(&_rb->spinlock) == 0); /*----v*/
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	res = _free(_rb);
-	assert(pthread_spin_unlock(&_rb->spinlock) == 0); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0);
 	return res;
 }
 
@@ -350,14 +372,17 @@ size_t rb_get_lost(ringbuffer_t *rb)
 {
 	struct _ringbuffer *_rb;
 	size_t lost;
+	int erc;
 
 	assert(rb);
 	_rb = rb->_rb;
 	if (!_rb)
 		return EFAULT;
-	assert(pthread_spin_lock(&_rb->spinlock) == 0); /*----v*/
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	lost = _rb->lost;
-	assert(pthread_spin_unlock(&_rb->spinlock) == 0); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0);
 	return lost;
 }
 
@@ -365,15 +390,18 @@ size_t rb_clear_lost(ringbuffer_t *rb)
 {
 	struct _ringbuffer *_rb;
 	size_t lost;
+	int erc;
 
 	assert(rb);
 	_rb = rb->_rb;
 	if (!_rb)
 		return EFAULT;
-	assert(pthread_spin_lock(&_rb->spinlock) == 0); /*----v*/
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	lost = _rb->lost;
 	_rb->lost = 0;
-	assert(pthread_spin_unlock(&_rb->spinlock) == 0); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0);
 	return lost;
 }
 
@@ -381,14 +409,18 @@ size_t rb_loose(ringbuffer_t *rb, size_t loose)
 {
 	struct _ringbuffer *_rb;
 	size_t lost;
+	int erc;
 
 	assert(rb);
 	_rb = rb->_rb;
 	if (!_rb)
 		return EFAULT;
-	assert(pthread_spin_lock(&_rb->spinlock) == 0); /*----v*/
+
+	erc = pthread_spin_lock(&_rb->spinlock); /*----v*/
+	assert(erc == 0);
 	_rb->lost += loose;
 	lost = _rb->lost;
-	assert(pthread_spin_unlock(&_rb->spinlock) == 0); /*--^*/
+	erc = pthread_spin_unlock(&_rb->spinlock); /*--^*/
+	assert(erc == 0); /*--^*/
 	return lost;
 }

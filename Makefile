@@ -49,7 +49,7 @@ test: $(TARGET) $(_TARGET)_test.c
 
 install: all
 ifneq ($(OS),GNU/Linux)
-	cp $(TARGET) /usr/local/lib/
+	cp $(TARGET) $(LOCAL)/$(SODIR)
 else
 	cp $(TARGET) /usr/local/lib/$(TARGET).0.1.0
 	chmod 0755   /usr/local/lib/$(TARGET).0.1.0	
@@ -57,6 +57,6 @@ else
 	( cd /usr/local/lib && ln -sf $(TARGET).0.1.0 $(TARGET).0   )
 	( cd /usr/local/lib && ln -sf $(TARGET).0.1.0 $(TARGET)     )
 endif
-	cp -rf ../$(_TARGET).h /usr/local/include/
+	cp -rf ../$(_TARGET) $(LOCAL)/include/
 
 endif

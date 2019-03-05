@@ -21,16 +21,15 @@
  *        synchonous from asynchronous io.
  */
 
-#ifndef RINGBUFFER_H_
-#define RINGBUFFER_H_
+#ifndef RINGBUFFER_RINGBUFFER_H_
+#define RINGBUFFER_RINGBUFFER_H_
+
+#include <unistd.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdbool.h>
-#include <stdint.h>
-#include <unistd.h>
 
 struct _ringbuffer;
 struct ringbuffer {
@@ -196,4 +195,4 @@ extern size_t rb_loose(ringbuffer_t *rb, size_t loose);
 }
 #endif
 
-#endif /* RINGBUFFER_H_ */
+#endif /* RINGBUFFER_RINGBUFFER_H_ */
